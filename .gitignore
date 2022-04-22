@@ -1,0 +1,7 @@
+.vscode
+IO.o
+main.o
+main
+table.o
+parseCommand.o
+executeCommand.o
