@@ -21,8 +21,6 @@ void serialize_row(Row *source, void *destination);
 
 void deserialize_row(void *source, Row *destination);
 
-void *row_slot(Table *table, uint32_t row_num);
-
 Table *open_db(char *filename);
 
 void close_db(Table *table);

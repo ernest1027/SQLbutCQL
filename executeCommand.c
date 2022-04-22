@@ -22,22 +22,25 @@ ExecuteResult execute_insert(InputBuffer *input_buffer, Statement *statement, Ta
     }
 
     Row *row_to_insert = &(statement->row_to_insert);
-
-    serialize_row(row_to_insert, row_slot(table, table->num_rows));
+    Cursor *cursor = table_end(table);
+    serialize_row(row_to_insert, cursor_value(cursor));
     table->num_rows += 1;
-
+    free(cursor);
     return EXECUTE_SUCCESS;
 }
 
 ExecuteResult execute_select(InputBuffer *input_buffer, Statement *statement, Table *table)
 {
     Row row;
-    for (uint32_t i = 0; i < table->num_rows; i++)
+    Cursor *cursor = table_start(table);
+    while(!(cursor)->end_of_table)
     {
-        deserialize_row(row_slot(table, i), &row);
+        deserialize_row(cursor_value(cursor), &row);
         print_row(&row);
+        cursor_advance(cursor);
     }
     return EXECUTE_SUCCESS;
+    free(cursor);
 }
 
 ExecuteResult execute_exit(InputBuffer *input_buffer, Statement *statement, Table *table)
