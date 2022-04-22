@@ -5,3 +5,4 @@ main
 table.o
 parseCommand.o
 executeCommand.o
+pager.o
