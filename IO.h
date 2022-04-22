@@ -6,11 +6,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
 
 typedef enum
 {
     EXECUTE_SUCCESS,
-    EXECUTE_TABLE_FULL
+    EXECUTE_TABLE_FULL,
+    
 } ExecuteResult;
 
 typedef enum
@@ -21,6 +25,11 @@ typedef enum
     PARSE_NEGATIVE_ID,
     PARSE_STRING_TOO_LONG,
 } ParseResult;
+
+typedef enum{
+    PAGER_OUT_OF_BOUNDS,
+    PAGER_FILE_READ_ERROR,
+} PagerResult;
 
 typedef struct
 {
@@ -36,6 +45,8 @@ void prompt_read();
 void print_parse_error(ParseResult result);
 
 void print_execute_error(ExecuteResult result);
+
+void print_pager_error(PagerResult result);
 
 void read_input(InputBuffer *input_buffer);
 

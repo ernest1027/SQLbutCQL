@@ -39,7 +39,20 @@ void print_execute_error(ExecuteResult result)
         case (EXECUTE_TABLE_FULL):
             printf("Table too full.\n");
             break;
+        
     }
+}
+
+void print_pager_error(PagerResult result){
+    switch(result){
+        case (PAGER_OUT_OF_BOUNDS):
+            printf("Tried to fetch a page out of bounds\n");
+            break;
+        case (PAGER_FILE_READ_ERROR):
+            printf("Can't read file\n");
+            break;
+    }
+    
 }
 
 void close_buffer(InputBuffer *input_buffer)

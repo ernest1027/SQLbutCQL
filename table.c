@@ -6,7 +6,6 @@ const uint32_t ID_OFFSET = 0;
 const uint32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE;
 const uint32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE;
 const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
-const uint32_t PAGE_SIZE = 4096;
 const uint32_t ROWS_PER_PAGE = PAGE_SIZE / ROW_SIZE;
 const uint32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 
@@ -28,33 +27,41 @@ void deserialize_row(void *source, Row *destination)
 void *row_slot(Table *table, uint32_t row_num)
 {
   uint32_t page_num = row_num / ROWS_PER_PAGE;
-  void *page = table->pages[page_num];
-  if (page == NULL)
-  {
-    page = table->pages[page_num] = malloc(PAGE_SIZE);
-  }
+  void *page = get_page(table->pager, page_num);
   uint32_t row_offset = row_num % ROWS_PER_PAGE;
   uint32_t byte_offset = row_offset * ROW_SIZE;
   return page + byte_offset;
 }
 
-Table *new_table()
+Table *open_db(char *filename)
 {
+  Pager *pager = pager_open(filename);
   Table *table = (Table *)malloc(sizeof(Table));
-  table->num_rows = 0;
-  for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++)
-  {
-    table->pages[i] = NULL;
-  }
+  table->num_rows = pager->file_length/ROW_SIZE;
+  table->pager = pager;
   return table;
 }
 
-void free_table(Table *table)
+void close_db(Table *table)
 {
-  for (int i = 0; table->pages[i]; i++)
-  {
-    free(table->pages[i]);
+  Pager *pager = table->pager;
+  uint32_t num_pages = table->num_rows/ROWS_PER_PAGE;
+  for(int i =0 ; i<num_pages; i++){
+    if(pager->pages[i] == NULL)continue;
+    page_flush(pager, i, PAGE_SIZE);
   }
+  uint32_t num_additional_rows = table->num_rows % ROWS_PER_PAGE;
+  if (num_additional_rows > 0) {
+     if (pager->pages[num_pages] != NULL) {
+         page_flush(pager, num_pages, num_additional_rows * ROW_SIZE);
+     }
+  }
+
+  close(pager->file_descriptor);
+  for(int i =0 ; i<TABLE_MAX_PAGES;i++){
+    free(pager->pages[i]);
+  }
+  free(pager);
   free(table);
 }
 

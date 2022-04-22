@@ -43,6 +43,6 @@ ExecuteResult execute_select(InputBuffer *input_buffer, Statement *statement, Ta
 ExecuteResult execute_exit(InputBuffer *input_buffer, Statement *statement, Table *table)
 {
     close_buffer(input_buffer);
-    free_table(table);
+    close_db(table);
     exit(EXIT_SUCCESS);
 }
