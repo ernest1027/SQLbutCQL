@@ -1,13 +1,6 @@
 #include "table.h"
-const uint32_t ID_SIZE = size_of_attribute(Row, id);
-const uint32_t USERNAME_SIZE = size_of_attribute(Row, username);
-const uint32_t EMAIL_SIZE = size_of_attribute(Row, email);
-const uint32_t ID_OFFSET = 0;
-const uint32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE;
-const uint32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE;
-const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
-const uint32_t ROWS_PER_PAGE = PAGE_SIZE / ROW_SIZE;
-const uint32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
+
+
 
 
 void serialize_row(Row *source, void *destination)
@@ -28,24 +21,23 @@ Table *open_db(char *filename)
 {
   Pager *pager = pager_open(filename);
   Table *table = (Table *)malloc(sizeof(Table));
-  table->num_rows = pager->file_length/ROW_SIZE;
+  table->root_page_num =0;
   table->pager = pager;
+
+  if(pager->num_pages == 0){
+    void* root_node = get_page(pager,0);
+    initialize_leaf_node(root_node);
+  }
   return table;
 }
 
 void close_db(Table *table)
 {
   Pager *pager = table->pager;
-  uint32_t num_pages = table->num_rows/ROWS_PER_PAGE;
-  for(int i =0 ; i<num_pages; i++){
+ 
+  for(int i =0 ; i<pager->num_pages; i++){
     if(pager->pages[i] == NULL)continue;
-    page_flush(pager, i, PAGE_SIZE);
-  }
-  uint32_t num_additional_rows = table->num_rows % ROWS_PER_PAGE;
-  if (num_additional_rows > 0) {
-     if (pager->pages[num_pages] != NULL) {
-         page_flush(pager, num_pages, num_additional_rows * ROW_SIZE);
-     }
+    page_flush(pager, i);
   }
 
   close(pager->file_descriptor);

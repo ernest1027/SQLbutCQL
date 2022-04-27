@@ -8,7 +8,8 @@ typedef enum
 {
     STATEMENT_INSERT,
     STATEMENT_SELECT,
-    STATEMENT_EXIT
+    STATEMENT_EXIT,
+    STATEMENT_PRINT_TREE
 } StatementType;
 
 typedef struct

@@ -59,5 +59,10 @@ ParseResult parse_meta_command(InputBuffer *input_buffer, Statement *statement){
         return PARSE_SUCCESS;
      
     }
+    if(strcmp(input_buffer->buffer, ".tree") == 0)
+    {
+      statement->type = STATEMENT_PRINT_TREE;
+      return PARSE_SUCCESS;
+    }
     return PARSE_UNRECOGNIZED_STATEMENT;
 }

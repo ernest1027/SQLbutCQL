@@ -2,20 +2,14 @@
 #define TABLE_H
 #include "IO.h"
 #include "pager.h"
-
+#include "node.h"
 
 typedef struct
 {
-    uint32_t num_rows;
+    uint32_t root_page_num;
     Pager *pager;
 } Table;
 
-typedef struct
-{
-    uint32_t id;
-    char username[COLUMN_USERNAME_SIZE+1];
-    char email[COLUMN_EMAIL_SIZE+1];
-} Row;
 
 void serialize_row(Row *source, void *destination);
 

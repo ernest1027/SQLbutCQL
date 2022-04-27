@@ -11,20 +11,22 @@ ExecuteResult execute_statement(InputBuffer *input_buffer, Statement *statement,
         return execute_select(input_buffer, statement, table);
     case (STATEMENT_EXIT):
         return execute_exit(input_buffer, statement, table);
+     case (STATEMENT_PRINT_TREE):
+        return execute_print_tree(table);
     }
+   
 }
 
 ExecuteResult execute_insert(InputBuffer *input_buffer, Statement *statement, Table *table)
 {
-    if (table->num_rows >= TABLE_MAX_ROWS)
-    {
+    void *node = get_page(table->pager, table->root_page_num);
+    if ((*leaf_node_num_cells(node) >= LEAF_NODE_MAX_CELLS))     {
         return EXECUTE_TABLE_FULL;
     }
 
     Row *row_to_insert = &(statement->row_to_insert);
     Cursor *cursor = table_end(table);
-    serialize_row(row_to_insert, cursor_value(cursor));
-    table->num_rows += 1;
+    leaf_node_insert(cursor, row_to_insert->id, row_to_insert);
     free(cursor);
     return EXECUTE_SUCCESS;
 }
@@ -48,4 +50,10 @@ ExecuteResult execute_exit(InputBuffer *input_buffer, Statement *statement, Tabl
     close_buffer(input_buffer);
     close_db(table);
     exit(EXIT_SUCCESS);
+}
+
+ExecuteResult execute_print_tree(Table *table){
+    printf("Tree:\n");
+    print_leaf_node(get_page(table->pager,0));
+    return EXECUTE_SUCCESS;
 }
