@@ -6,3 +6,5 @@ parseCommand.o
 executeCommand.o
 pager.o
 cursor.o
+node.o
+tree.o
