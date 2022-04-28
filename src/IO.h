@@ -14,7 +14,8 @@ typedef enum
 {
     EXECUTE_SUCCESS,
     EXECUTE_TABLE_FULL,
-    
+    EXECUTE_DUPLICATE_KEY,
+    EXECUTE_ACCESS_INVALID_KEY,
 } ExecuteResult;
 
 typedef enum
@@ -51,4 +52,6 @@ void print_pager_error(PagerResult result);
 void read_input(InputBuffer *input_buffer);
 
 void close_buffer(InputBuffer *input_buffer);
+
+void indent(int indent_level);
 #endif

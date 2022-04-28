@@ -13,5 +13,5 @@ typedef struct {
 void *get_page(Pager *pager, uint32_t page_number);
 Pager *pager_open(char * filename);
 void page_flush(Pager *pager, uint32_t page_number);
-
+uint32_t get_free_page_num(Pager* pager);
 #endif

@@ -50,7 +50,7 @@ Pager *pager_open(char *filename)
     Pager *pager = malloc(sizeof(Pager));
     pager->file_descriptor = fd;
     pager->file_length = file_length;
-    pager->num_pages = (file_length/PAGE_SIZE);
+    pager->num_pages = (file_length / PAGE_SIZE);
     for (int i = 0; i < TABLE_MAX_PAGES; i++)
         pager->pages[i] = NULL;
     return pager;
@@ -78,4 +78,9 @@ void page_flush(Pager *pager, uint32_t page_number)
         print_pager_error(PAGER_FILE_READ_ERROR);
         exit(EXIT_FAILURE);
     }
+}
+
+uint32_t get_free_page_num(Pager *pager)
+{
+    return pager->num_pages;
 }
