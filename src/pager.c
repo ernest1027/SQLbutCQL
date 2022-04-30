@@ -4,6 +4,9 @@ void *get_page(Pager *pager, uint32_t page_number)
 {
     if (page_number > TABLE_MAX_PAGES)
     {
+     printf("%d\n", page_number);
+
+
         print_pager_error(PAGER_OUT_OF_BOUNDS);
         exit(EXIT_FAILURE);
     }

@@ -8,3 +8,4 @@ pager.o
 cursor.o
 node.o
 tree.o
+input.in

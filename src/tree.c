@@ -29,13 +29,15 @@ void leaf_node_split_insert(Cursor *cursor, uint32_t key, Row *value)
 {
 
     void *prev_node = get_page(cursor->table->pager, cursor->page_num);
-
+    uint32_t prev_max = get_node_max_key(prev_node);
     uint32_t new_page_num = get_free_page_num(cursor->table->pager);
 
     void *new_node = get_page(cursor->table->pager, new_page_num);
 
     initialize_leaf_node(new_node);
-
+    *leaf_next_leaf(new_node) = *leaf_next_leaf(prev_node);
+    *leaf_next_leaf(prev_node) = new_page_num;
+    *node_parent(new_node) = *node_parent(prev_node);
     for (int i = LEAF_NODE_MAX_CELLS; i >= 0; i--)
     {
         void *dest_node;
@@ -53,7 +55,8 @@ void leaf_node_split_insert(Cursor *cursor, uint32_t key, Row *value)
 
         if (i == cursor->cell_num)
         {
-            serialize_row(value, dest_cell);
+            serialize_row(value, leaf_node_value(dest_node, index));
+            *leaf_node_key(dest_node, index) = key;
             continue;
         }
         if (i > cursor->cell_num)
@@ -71,8 +74,11 @@ void leaf_node_split_insert(Cursor *cursor, uint32_t key, Row *value)
     }
     else
     {
-        // TODO
-        exit(EXIT_FAILURE);
+        uint32_t parent_page_num = *node_parent(prev_node);
+        uint32_t new_max = get_node_max_key(prev_node);
+        void *parent = get_page(cursor->table->pager, parent_page_num);
+        update_internal_node_key(parent, prev_max, new_max);
+        internal_node_insert(cursor->table, parent_page_num, new_page_num);
     }
 }
 
@@ -92,6 +98,9 @@ void create_new_root(Table *table, uint32_t right_child_page_num)
     *internal_node_child(root, 0) = left_child_page_num;
     *internal_node_right_child(root) = right_child_page_num;
     *internal_node_key(root, 0) = get_node_max_key(left_child);
+
+    *node_parent(left_child) = table->root_page_num;
+    *node_parent(right_child) = table->root_page_num;
 }
 
 void print_tree(Pager *pager, uint32_t page_num, uint32_t indent_level)
@@ -113,7 +122,7 @@ void print_tree(Pager *pager, uint32_t page_num, uint32_t indent_level)
     case (NODE_INTERNAL):
         num_keys = *internal_node_num_keys(node);
         indent(indent_level);
-        printf("- internal node (size %d)\n", num_keys);
+        printf("- internal node (num keys %d)\n", num_keys);
         for (int i = 0; i < num_keys; i++)
         {
             child = *internal_node_child(node, i);
@@ -125,4 +134,96 @@ void print_tree(Pager *pager, uint32_t page_num, uint32_t indent_level)
         print_tree(pager, child, indent_level + 1);
         break;
     }
+}
+
+void internal_node_insert(Table *table, uint32_t parent_page_num, uint32_t child_page_num)
+{
+    void *parent = get_page(table->pager, parent_page_num);
+    void *child = get_page(table->pager, child_page_num);
+
+    uint32_t child_max_key = get_node_max_key(child);
+    uint32_t index = internal_node_find_child(parent, child_max_key);
+
+    uint32_t num_keys = (*internal_node_num_keys(parent));
+    if (num_keys >= INTERNAL_NODE_MAX_KEYS)
+    {
+        internal_node_split_and_insert(table, parent_page_num,child_page_num);
+        return;
+    }
+    (*internal_node_num_keys(parent)) = num_keys + 1;
+    uint32_t right_child_page_num = *internal_node_right_child(parent);
+    void *right_child = get_page(table->pager, right_child_page_num);
+    if (child_max_key > get_node_max_key(right_child))
+    {
+        *internal_node_child(parent, num_keys) = right_child_page_num;
+        *internal_node_key(parent, num_keys) = get_node_max_key(right_child);
+        *internal_node_right_child(parent) = child_page_num;
+    }
+    else
+    {
+        for (int i = num_keys; i > index; i--)
+        {
+            void *dest = internal_node_cell(parent, i);
+            void *source = internal_node_cell(parent, i - 1);
+            memcpy(dest, source, INTERNAL_NODE_CELL_SIZE);
+        }
+        *internal_node_child(parent, index) = child_page_num;
+        *internal_node_key(parent, index) = child_max_key;
+    }
+}
+
+void internal_node_split_and_insert(Table *table, uint32_t parent_page_num, uint32_t child_page_num)
+{
+    void *prev_node = get_page(table->pager, parent_page_num);
+    uint32_t prev_max = get_node_max_key(prev_node);
+    uint32_t right_page_num = get_free_page_num(table->pager);
+    void *right_node = get_page(table->pager, right_page_num);
+
+    initialize_internal_node(right_node);
+    *node_parent(right_node) = *node_parent(prev_node);
+    for (int i = INTERNAL_NODE_MAX_KEYS; i >= INTERNAL_NODE_LEFT_SPLIT_COUNT; i--)
+    {
+
+        uint32_t index = i % INTERNAL_NODE_LEFT_SPLIT_COUNT;
+        uint32_t key, child;
+        if (i == INTERNAL_NODE_MAX_KEYS)
+        {
+            *internal_node_right_child(right_node) = *internal_node_right_child(prev_node);
+            continue;
+        }       
+        else
+        {
+            child = *internal_node_child(prev_node, i);
+            key = *internal_node_key(prev_node, i);
+            *internal_node_cell(right_node, index) = child;
+            *internal_node_key(right_node, index) = key;
+        }        
+    }
+    *internal_node_right_child(prev_node) = *internal_node_child(prev_node, INTERNAL_NODE_LEFT_SPLIT_COUNT-1);
+    *(internal_node_num_keys(prev_node)) = INTERNAL_NODE_LEFT_SPLIT_COUNT-1;
+    *(internal_node_num_keys(right_node)) = INTERNAL_NODE_RIGHT_SPLIT_COUNT-1;
+    uint32_t new_max = get_node_max_key(prev_node);
+    void *child = get_page(table->pager,child_page_num);
+    uint32_t child_max = get_node_max_key(child);
+    if(child_max > new_max)
+    {
+        internal_node_insert(table,right_page_num,child_page_num);
+    }
+    else{
+        internal_node_insert(table,parent_page_num,child_page_num);
+    }
+
+    if (is_node_root(prev_node))
+    {
+        return create_new_root(table, right_page_num);
+    }
+    else
+    {
+        uint32_t parent_page_num = *node_parent(prev_node);
+        
+        void *parent = get_page(table->pager, parent_page_num);
+        update_internal_node_key(parent, prev_max, new_max);
+        internal_node_insert(table, parent_page_num, right_page_num);
+    }
+
 }

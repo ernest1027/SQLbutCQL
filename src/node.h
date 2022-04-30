@@ -4,12 +4,11 @@
 
 typedef enum {NODE_INTERNAL, NODE_LEAF} NodeType;
 
-
+#define size_of_attribute(Struct, Attribute) sizeof(((Struct *)0)->Attribute)
 
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
-#define size_of_attribute(Struct, Attribute) sizeof(((Struct *)0)->Attribute)
-#define TABLE_MAX_PAGES 100
+#define TABLE_MAX_PAGES 1000
 #define PAGE_SIZE 4096
 
 typedef struct
@@ -37,7 +36,9 @@ typedef struct
 
 #define LEAF_NODE_NUM_CELLS_SIZE sizeof(uint32_t)
 #define LEAF_NODE_NUM_CELLS_OFFSET  COMMON_NODE_HEADER_SIZE
-#define LEAF_NODE_HEADER_SIZE (COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE)
+#define LEAF_NODE_NEXT_LEAF_SIZE sizeof(uint32_t)
+#define LEAF_NODE_NEXT_LEAF_OFFSET (LEAF_NODE_NUM_CELLS_OFFSET + LEAF_NODE_NUM_CELLS_SIZE)
+#define LEAF_NODE_HEADER_SIZE  (COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE + LEAF_NODE_NEXT_LEAF_SIZE)
 
 #define LEAF_NODE_KEY_SIZE  sizeof(uint32_t)
 #define LEAF_NODE_KEY_OFFSET  0
@@ -59,12 +60,19 @@ typedef struct
 #define INTERNAL_NODE_KEY_SIZE sizeof(uint32_t)
 #define INTERNAL_NODE_CHILD_SIZE sizeof(uint32_t)
 #define INTERNAL_NODE_CELL_SIZE  (INTERNAL_NODE_CHILD_SIZE + INTERNAL_NODE_KEY_SIZE)
+#define INTERNAL_NODE_SPACE_FOR_CELLS  (PAGE_SIZE - INTERNAL_NODE_CELL_SIZE)
+#define INTERNAL_NODE_MAX_CELLS (INTERNAL_NODE_SPACE_FOR_CELLS/INTERNAL_NODE_CELL_SIZE)
+#define INTERNAL_NODE_MAX_KEYS
+
+#define INTERNAL_NODE_RIGHT_SPLIT_COUNT ((INTERNAL_NODE_MAX_KEYS + 1) / 2)
+#define INTERNAL_NODE_LEFT_SPLIT_COUNT ((INTERNAL_NODE_MAX_KEYS + 1) - INTERNAL_NODE_RIGHT_SPLIT_COUNT)
 
 uint32_t *leaf_node_num_cells(void *node);
 void *leaf_node_cell(void *node, uint32_t cell_num);
 uint32_t *leaf_node_key(void *node, uint32_t cell_num);
 void *leaf_node_value(void *node, uint32_t cell_num);
 void initialize_leaf_node(void *node);
+uint32_t *leaf_next_leaf(void *node);
 
 uint32_t *internal_node_num_keys(void *node);
 uint32_t *internal_node_right_child(void *node);
@@ -72,6 +80,8 @@ uint32_t *internal_node_cell(void *node, uint32_t cell_num);
 uint32_t *internal_node_child(void *node, uint32_t child_num);
 uint32_t *internal_node_key(void *node, uint32_t key_num);
 void initialize_internal_node(void *node);
+void update_internal_node_key(void *node, uint32_t old_key, uint32_t new_key);
+uint32_t internal_node_find_child(void *node, uint32_t key);
 
 bool is_node_root(void *node);
 void set_node_root(void *node, bool is_root);
@@ -79,6 +89,6 @@ void set_node_root(void *node, bool is_root);
 NodeType get_node_type(void *node);
 void set_node_type(void *node, NodeType type);
 uint32_t get_node_max_key(void *node);
-
+uint32_t *node_parent(void *node);
 
 #endif
