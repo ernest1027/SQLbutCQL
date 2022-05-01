@@ -1,6 +1,7 @@
 #ifndef PAGER_H
 #define PAGER_H
-#include "node.h"
+#include "./node/internalNode.h"
+#include "./node/leafNode.h"
 
 
 typedef struct {

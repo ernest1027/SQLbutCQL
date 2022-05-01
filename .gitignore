@@ -9,3 +9,5 @@ cursor.o
 node.o
 tree.o
 input.in
+internalNode.o
+leafNode.o

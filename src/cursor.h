@@ -1,7 +1,6 @@
 #ifndef CURSOR_H
 #define CURSOR_H
 #include "table.h"
-#include "node.h"
 
 typedef struct{
     Table *table;

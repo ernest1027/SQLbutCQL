@@ -1,4 +1,15 @@
 #include "tree.h"
+uint32_t get_node_max_key(void *node)
+{
+
+    switch (get_node_type(node))
+    {
+    case NODE_INTERNAL:
+        return *internal_node_key(node, *internal_node_num_keys(node) - 1);
+    case NODE_LEAF:
+        return *leaf_node_key(node, *leaf_node_num_cells(node) - 1);
+    }
+}
 void leaf_node_insert(Cursor *cursor, uint32_t key, Row *value)
 {
 

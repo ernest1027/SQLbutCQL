@@ -1,15 +1,5 @@
 #include "IO.h"
 
-InputBuffer *new_input_buffer()
-{
-    InputBuffer *input_buffer = malloc(sizeof(InputBuffer));
-    input_buffer->buffer = NULL;
-    input_buffer->buffer_length = 0;
-    input_buffer->text_length = 0;
-
-    return input_buffer;
-}
-
 void prompt_read() { printf("SQLbutCQL > "); }
 
 void print_parse_error(ParseResult result)
@@ -59,6 +49,17 @@ void print_pager_error(PagerResult result)
         printf("Can't read file\n");
         break;
     }
+}
+
+
+InputBuffer *new_input_buffer()
+{
+    InputBuffer *input_buffer = malloc(sizeof(InputBuffer));
+    input_buffer->buffer = NULL;
+    input_buffer->buffer_length = 0;
+    input_buffer->text_length = 0;
+
+    return input_buffer;
 }
 
 void close_buffer(InputBuffer *input_buffer)

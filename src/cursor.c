@@ -27,7 +27,6 @@ Cursor *leaf_node_find(Table *table, uint32_t page_num, uint32_t key)
 {
     void *node = get_page(table->pager, page_num);
     uint32_t num_cells = *leaf_node_num_cells(node);
-
     Cursor *cursor = malloc(sizeof(Cursor));
     cursor->table = table;
     cursor->page_num = page_num;
@@ -50,16 +49,13 @@ Cursor *leaf_node_find(Table *table, uint32_t page_num, uint32_t key)
         }
         low = index + 1;
     }
-
     cursor->cell_num = low;
     return cursor;
 }
 
 Cursor *internal_node_find(Table *table, uint32_t page_num, uint32_t key)
 {
-    void *node = get_page(table->pager, page_num);
-   
-
+    void *node = get_page(table->pager, page_num); 
     uint32_t index = internal_node_find_child(node,key);
     uint32_t child_num = *internal_node_child(node, index);
     void *child = get_page(table->pager, child_num);
